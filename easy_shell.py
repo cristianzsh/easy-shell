@@ -35,7 +35,7 @@ import socketserver
 from urllib.parse import urlparse
 
 PORT = 8080
-DOMAIN = "http://127.0.0.1:{}".format(str(PORT))
+DOMAIN = "http://127.0.0.1:{}".format(PORT)
 
 HTTPS = False
 KEY_FILE = "keyfile.key"      # openssl genrsa 2048 > keyfile.key && chmod 400 keyfile.key
